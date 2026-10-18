@@ -1,0 +1,10 @@
+{
+  "name": "ais-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Google AI Studio web reverse proxy with OpenAI/Gemini APIs and function calling",
+  "main": "src/main.js",
+  "scripts": { "start": "node src/main.js", "test": "node --test test/*.test.js" },
+  "engines": { "node": ">=22" }
+}

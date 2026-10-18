@@ -1,0 +1,19 @@
+{
+  "mode": "extension",
+  "port": 8765,
+  "host": "127.0.0.1",
+  "apiKey": "",
+  "browserPath": "",
+  "debugPort": 9333,
+  "userDataDir": "data/browser-profile",
+  "accounts": [
+    0
+  ],
+  "minimizeBrowser": true,
+  "safetyOff": true,
+  "defaultThinkingLevel": "high",
+  "includeThoughts": true,
+  "requestTimeoutSeconds": 300,
+  "rotation": "round-robin",
+  "thinkingOverrides": {}
+}

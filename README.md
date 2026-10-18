@@ -18,6 +18,9 @@
   <a href="./README_EN.md">English Documentation</a>
 </p>
 
+> [!TIP]
+> **本分支新增 Windows 桌面版（Node.js 重写）**：OpenAI 兼容接口、可用的函数调用（自动处理思维签名）、不耗额度的快速握手、多 Chrome 配置文件轮询。详见 [desktop/README.md](./desktop/README.md)。
+
 ---
 
 ## 目录

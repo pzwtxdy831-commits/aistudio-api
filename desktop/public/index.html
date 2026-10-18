@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIS 反代</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --fg:#1d2330; --muted:#6b7385; --line:#e3e6ec; --ok:#1f9d55; --warn:#d68a00; --err:#d64545; --off:#9aa1ae; --accent:#6a4bc4; --accent-soft:#efeafc; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#14161b; --card:#1c1f26; --fg:#e6e8ee; --muted:#9097a6; --line:#2b2f39; --accent:#a58cf0; --accent-soft:#2a2440; --off:#5d6370; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.55 system-ui, "Microsoft YaHei", sans-serif; }
+  main { max-width:1060px; margin:0 auto; padding:20px 16px 48px; }
+  header { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  h1 { font-size:20px; margin:0; }
+  .sub, .muted { color:var(--muted); }
+  .small { font-size:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+  .card h2 { font-size:15px; margin:0; }
+  .head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; }
+  .stat b { display:block; font-size:20px; }
+  .stat span { color:var(--muted); font-size:12px; }
+  code { background:var(--bg); border:1px solid var(--line); border-radius:5px; padding:1px 6px; font-family:Consolas, monospace; word-break:break-all; }
+  button { background:var(--accent); color:#fff; border:1px solid var(--accent); border-radius:6px; padding:3px 10px; cursor:pointer; font:inherit; font-size:12px; }
+  button.ghost { background:transparent; color:var(--accent); }
+  button.danger { background:transparent; color:var(--err); border-color:var(--err); }
+  select { font:inherit; font-size:13px; color:var(--fg); background:var(--card); border:1px solid var(--line); border-radius:6px; padding:3px 6px; }
+  .scroll { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:500; font-size:12px; white-space:nowrap; }
+  .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+  .s-ready { background:var(--ok); } .s-starting, .s-login { background:var(--warn); } .s-error { background:var(--err); } .s-idle, .s-offline { background:var(--off); }
+  .tag { display:inline-block; font-size:11px; padding:0 6px; border-radius:4px; background:var(--accent-soft); color:var(--accent); margin-left:6px; vertical-align:middle; }
+  tr.disabled td { opacity:.5; }
+  .switch { position:relative; display:inline-block; width:34px; height:18px; vertical-align:middle; }
+  .switch input { opacity:0; width:0; height:0; }
+  .switch span { position:absolute; inset:0; background:var(--off); border-radius:18px; cursor:pointer; transition:.15s; }
+  .switch span::before { content:""; position:absolute; width:14px; height:14px; left:2px; top:2px; background:#fff; border-radius:50%; transition:.15s; }
+  .switch input:checked + span { background:var(--ok); }
+  .switch input:checked + span::before { transform:translateX(16px); }
+  .acts { display:flex; gap:4px; flex-wrap:wrap; }
+  .empty { padding:14px 4px; color:var(--muted); }
+  ol { margin:6px 0 0; padding-left:20px; }
+  pre { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; max-height:300px; overflow:auto; font:12px/1.5 Consolas, monospace; white-space:pre-wrap; word-break:break-all; margin:10px 0 0; }
+  details summary { cursor:pointer; font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>AIS 反代</h1>
+    <span class="sub">Google AI Studio 网页版 → OpenAI / Gemini 接口，多账号轮询，支持函数调用</span>
+  </header>
+
+  <div class="card">
+    <div class="head"><h2>接入地址</h2><span class="muted small" id="keyinfo"></span></div>
+    <div class="row" style="margin-bottom:6px">OpenAI 兼容：<code id="oa"></code><button class="ghost" data-copy="oa">复制</button></div>
+    <div class="row">Gemini 原生（酒馆选 Google AI Studio 时填反代地址）：<code id="gm"></code><button class="ghost" data-copy="gm">复制</button></div>
+  </div>
+
+  <div class="card"><div class="grid" id="stats"></div></div>
+
+  <div class="card">
+    <div class="head"><h2>模型设置</h2></div>
+    <div class="row">
+      <label>gemini-4-argon 思考强度
+        <select id="thinking4a">
+          <option value="">跟随客户端（客户端没指定时用 high）</option>
+          <option value="low">low · 最快，首字约 3 秒</option>
+          <option value="medium">medium</option>
+          <option value="high">high · 最强，首字约 8~9 秒</option>
+        </select>
+      </label>
+    </div>
+    <div class="muted small" style="margin-top:6px">只对 gemini-4-argon 生效，选了以后会覆盖客户端传来的思考强度。4a 不支持 minimal，客户端传 minimal 时会自动改成 low。</div>
+  </div>
+
+  <div class="card">
+    <div class="head">
+      <h2>账号 <span class="muted small" id="acount"></span></h2>
+      <label class="small muted">轮询方式
+        <select id="rotation">
+          <option value="round-robin">每个请求换一个账号</option>
+          <option value="sticky">用到限额再换下一个</option>
+        </select>
+      </label>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th>账号</th><th>状态</th><th>成功 / 失败</th><th>冷却中</th><th>启用</th><th>操作</th></tr></thead>
+      <tbody id="accs"></tbody>
+    </table></div>
+    <details style="margin-top:10px">
+      <summary class="small">怎么添加账号</summary>
+      <ol class="small muted">
+        <li>在要用的 Chrome 配置文件里装一次扩展：打开 <code>chrome://extensions</code> → 开「开发者模式」→「加载已解压的扩展程序」→ 选 <code id="extdir">AIS反代\extension</code> 文件夹。</li>
+        <li>打开那个配置文件的 Chrome 窗口，扩展会自动开一个固定的 AI Studio 标签页，几秒后这里就会出现这个账号并开始轮询。</li>
+        <li>不想让某个配置文件参与：点扩展图标取消「这个配置文件参与轮询」，或在这里关掉「启用」。</li>
+        <li>那个配置文件的窗口关掉后账号会显示「未打开」，重新打开会自动恢复。</li>
+      </ol>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="head"><h2>最近请求</h2></div>
+    <div class="scroll"><table>
+      <thead><tr><th>时间</th><th>账号</th><th>模型</th><th>思考</th><th>签名</th><th>首字</th><th>总计</th><th>输入 / 输出</th><th>TPS</th><th>结果</th></tr></thead>
+      <tbody id="recent"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <details><summary>运行日志</summary><pre id="logs"></pre></details>
+  </div>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const base = location.origin;
+$('oa').textContent = base + '/v1';
+$('gm').textContent = base;
+document.querySelectorAll('[data-copy]').forEach((b) => (b.onclick = () => navigator.clipboard.writeText($(b.dataset.copy).textContent)));
+const avg = (xs) => { const v = xs.filter((x) => typeof x === 'number'); return v.length ? Math.round((v.reduce((a, b) => a + b, 0) / v.length) * 10) / 10 : null; };
+const ms = (v) => (v == null ? '-' : v < 1000 ? v + 'ms' : (v / 1000).toFixed(1) + 's');
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const STATE = { ready: '就绪', starting: '启动中', login: '未登录', error: '出错', idle: '未就绪', offline: '未打开' };
+const SOURCE = { extension: '扩展', cookie: 'Cookie', chrome: '独立浏览器' };
+
+async function post(url, body) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) alert(j.error?.message || j.error || '操作失败');
+  tick();
+  return j;
+}
+
+$('rotation').onchange = () => post('/api/settings', { rotation: $('rotation').value });
+$('thinking4a').onchange = () => post('/api/settings', { thinking4a: $('thinking4a').value });
+
+$('accs').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-act]');
+  if (!b) return;
+  const id = encodeURIComponent(b.dataset.id);
+  if (b.dataset.act === 'delete' && !confirm('从列表里移除这个账号？（扩展账号的配置文件再次连上时会重新出现）')) return;
+  post(`/api/accounts/${id}/${b.dataset.act}`);
+});
+$('accs').addEventListener('change', (e) => {
+  const t = e.target.closest('input[data-toggle]');
+  if (t) post(`/api/accounts/${encodeURIComponent(t.dataset.toggle)}/${t.checked ? 'enable' : 'disable'}`);
+});
+
+function renderAccounts(list) {
+  const ready = list.filter((a) => a.state === 'ready' && a.enabled).length;
+  $('acount').textContent = list.length ? `${ready} / ${list.length} 个可用` : '';
+  if (!list.length) {
+    $('accs').innerHTML = '<tr><td colspan="6" class="empty">还没有账号。按下面「怎么添加账号」在 Chrome 配置文件里装好扩展并打开它，账号会自动出现在这里。</td></tr>';
+    return;
+  }
+  if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#accs')) return;
+  $('accs').innerHTML = list.map((a) => {
+    const cds = Object.entries(a.cooldowns).map(([m, u]) => `${esc(m)}<br><span class="muted small">至 ${new Date(u).toLocaleTimeString()}</span>`).join('<br>') || '<span class="muted">-</span>';
+    const del = a.source === 'chrome' ? '' : `<button class="danger" data-act="delete" data-id="${esc(a.id)}">移除</button>`;
+    return `<tr class="${a.enabled ? '' : 'disabled'}">
+      <td>${esc(a.label)}<span class="tag">${SOURCE[a.source] || a.source}</span></td>
+      <td><span class="dot s-${a.state}"></span>${STATE[a.state] || a.state}${a.message ? `<br><span class="muted small">${esc(a.message)}</span>` : ''}</td>
+      <td>${a.stats.ok} / ${a.stats.fail}${a.inflight ? `<br><span class="muted small">进行中 ${a.inflight}</span>` : ''}</td>
+      <td class="small">${cds}</td>
+      <td><label class="switch"><input type="checkbox" data-toggle="${esc(a.id)}" ${a.enabled ? 'checked' : ''}><span></span></label></td>
+      <td><div class="acts">
+        <button class="ghost" data-act="show" data-id="${esc(a.id)}">看标签页</button>
+        <button class="ghost" data-act="restart" data-id="${esc(a.id)}">重新握手</button>
+        ${del}
+      </div></td></tr>`;
+  }).join('');
+}
+
+async function tick() {
+  let s;
+  try { s = await (await fetch('/api/status')).json(); } catch { return; }
+  $('keyinfo').textContent = s.hasKey ? '已设置 API Key' : '未设置 API Key（任意 Key 都能用）';
+  if (document.activeElement !== $('rotation')) $('rotation').value = s.rotation || 'round-robin';
+  const t = s.totals;
+  const okRecent = s.recent.filter((r) => r.result === 'ok').slice(0, 20);
+  if (document.activeElement !== $('thinking4a')) $('thinking4a').value = s.thinking4a || '';
+  $('stats').innerHTML = [
+    ['请求', t.requests], ['成功', t.ok], ['失败', t.fail],
+    ['输入 tokens', t.promptTokens.toLocaleString()], ['输出 tokens', t.outputTokens.toLocaleString()],
+    ['平均首字', ms(avg(okRecent.map((r) => r.firstMs)))],
+    ['平均 TPS', avg(okRecent.map((r) => r.tps)) ?? '-'],
+    ['已连接配置文件', s.profiles ?? 0],
+  ].map(([k, v]) => `<div class="stat"><b>${esc(v)}</b><span>${k}</span></div>`).join('');
+  renderAccounts(s.accounts);
+  $('recent').innerHTML = s.recent.map((r) => `<tr><td>${new Date(r.time).toLocaleTimeString()}</td><td>${esc(r.account)}</td><td>${esc(r.model)}</td>
+    <td>${esc(r.level || '-')}</td><td>${ms(r.snapMs)}</td><td>${ms(r.firstMs)}</td><td>${ms(r.totalMs)}</td><td>${r.in ?? '-'} / ${r.out ?? '-'}${r.thoughts ? `<br><span class="muted small">思考 ${r.thoughts}</span>` : ''}</td>
+    <td>${r.tps ?? '-'}</td><td>${r.result === 'ok' ? '✓' : '<span style="color:var(--err)">' + esc(r.result) + '</span>'}</td></tr>`).join('') || '<tr><td colspan="10" class="muted">暂无</td></tr>';
+  const pre = $('logs');
+  const atBottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 10;
+  pre.textContent = s.logs.join('\n');
+  if (atBottom) pre.scrollTop = pre.scrollHeight;
+}
+tick();
+setInterval(tick, 2000);
+</script>
+</body>
+</html>

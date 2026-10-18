@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<style>
+body{width:290px;margin:0;padding:12px;font:13px/1.5 system-ui,"Microsoft YaHei",sans-serif;color:#1d2330}
+h1{font-size:14px;margin:0 0 8px} .row{margin:5px 0} input[type=text]{width:100%;box-sizing:border-box;padding:4px;font:inherit}
+button{margin-top:6px;padding:4px 10px;border:0;border-radius:5px;background:#6a4bc4;color:#fff;cursor:pointer}
+.ok{color:#1f9d55}.bad{color:#d64545}.muted{color:#6b7385;font-size:12px}
+</style></head>
+<body>
+<h1>AIS 反代桥接</h1>
+<div class="row">反代连接：<b id="ws">…</b></div>
+<div class="row">工作标签页：<span id="workers">…</span></div>
+<div class="row"><label><input type="checkbox" id="join"> 这个配置文件参与轮询</label></div>
+<div class="row muted">关掉后会关闭本配置文件的工作标签页，反代不再使用这个账号。配置文件编号：<span id="pid"></span></div>
+<div class="row">反代地址：<input type="text" id="server"></div>
+<button id="save">保存并重连</button>
+<script src="popup.js"></script>
+</body></html>
