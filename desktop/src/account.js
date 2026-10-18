@@ -323,7 +323,7 @@ export class Account extends AccountBase {
     signal?.addEventListener('abort', onAbort, { once: true });
     const started = page.call(STREAM_JS, {
       rid: id, binding: BINDING, url: this.template.url, headers: this.authHeaders(), body,
-      timeoutMs: (this.cfg.requestTimeoutSeconds || 300) * 1000,
+      timeoutMs: (this.cfg.requestTimeoutSeconds || 600) * 1000,
     }).catch((e) => sink.push({ t: 'error', message: e.message }));
     const self = this;
     let finished = false;

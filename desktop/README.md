@@ -71,7 +71,7 @@
 | `safetyOff` | 默认 `true`，所有安全过滤设为关闭 |
 | `defaultThinkingLevel` | 请求没有指定时的思考强度：`minimal` / `low` / `medium` / `high` |
 | `includeThoughts` | 是否把思考内容返回给客户端 |
-| `requestTimeoutSeconds` | 谷歌连续多久没有任何数据才判定超时（生成中只要数据在流就不会断） |
+| `requestTimeoutSeconds` | 谷歌连续多久没有任何数据才判定超时，默认 600 秒（10 分钟）；生成中只要数据在流就不会断 |
 | `mode` / `browserPath` / `debugPort` / `userDataDir` / `accounts` / `minimizeBrowser` | `mode: "chrome"` 时由反代自己启动一个独立 Chrome（需在弹出的窗口里登录），一般不需要 |
 
 更新扩展文件后不需要手动重新加载：反代发现扩展版本与磁盘上的 `manifest.json` 不一致时，会自动让扩展重新加载。

@@ -46,7 +46,7 @@ const DEFAULT_CONFIG = {
   safetyOff: true,
   defaultThinkingLevel: 'high',
   includeThoughts: true,
-  requestTimeoutSeconds: 300,
+  requestTimeoutSeconds: 600,
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Shanghai',
 };
 

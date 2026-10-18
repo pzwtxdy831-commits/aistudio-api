@@ -280,7 +280,7 @@ export class ExtAccount extends AccountBase {
     this.hub.sinks.set(id, sink);
     const abort = () => this.hub.cmd(this.key, 'abort', id, 5000).catch(() => {});
     signal?.addEventListener('abort', abort, { once: true });
-    const started = this.hub.cmd(this.key, 'stream', { rid: id, body, timeoutMs: (this.cfg.requestTimeoutSeconds || 300) * 1000 })
+    const started = this.hub.cmd(this.key, 'stream', { rid: id, body, timeoutMs: (this.cfg.requestTimeoutSeconds || 600) * 1000 })
       .catch((e) => sink.push({ t: 'error', message: e.message }));
     const hub = this.hub;
     let finished = false;

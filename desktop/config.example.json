@@ -13,7 +13,7 @@
   "safetyOff": true,
   "defaultThinkingLevel": "high",
   "includeThoughts": true,
-  "requestTimeoutSeconds": 300,
+  "requestTimeoutSeconds": 600,
   "rotation": "round-robin",
   "thinkingOverrides": {}
 }
